@@ -1,0 +1,21 @@
+# 실제 flag는 커밋하지 않습니다 (Dreamhack 원격 챌린지 플래그)
+flag
+**/flag
+
+# 챌린지 다운로드 zip 아카이브 제외
+*.zip
+
+# pwndbg 서브트리 (별도 설치 도구)
+/pwndbg/
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# gdb 히스토리
+.gdb_history
+**/.gdb_history
+
+# core dump
+core
+core.*
