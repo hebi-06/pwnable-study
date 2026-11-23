@@ -8,6 +8,11 @@
 - 디버거: [pwndbg](./pwndbg) (`source pwndbg/.venv/bin/activate` 후 사용)
 - 익스 프레임워크: [pwntools](https://github.com/Gallopsled/pwntools) — `pip install pwntools`
 
+## 문서
+
+- [기초정리.md](./기초정리.md) — 메모리 레이아웃, ELF 섹션/세그먼트, 스택, PLT/GOT, 보호기법, glibc 힙(chunk, tcache, bins, malloc/free 흐름, 버전별 차이)
+- [공략노트.md](./공략노트.md) — 패턴별 공략 치트시트
+
 ## 챌린지 목록
 
 | 챌린지 | 핵심 기법 | 아키텍처 | 요약 |
