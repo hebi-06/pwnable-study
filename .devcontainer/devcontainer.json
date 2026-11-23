@@ -1,0 +1,9 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  "postCreateCommand": "test -d /workspaces/pwnable-study/.venv || python3 -m venv /workspaces/pwnable-study/.venv && /workspaces/pwnable-study/.venv/bin/pip install -q --upgrade pip wheel && /workspaces/pwnable-study/.venv/bin/pip install -q pwntools"
+}

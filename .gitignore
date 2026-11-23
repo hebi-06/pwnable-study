@@ -19,3 +19,4 @@ __pycache__/
 # core dump
 core
 core.*
+.venv/
