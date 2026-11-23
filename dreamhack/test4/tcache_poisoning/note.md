@@ -70,8 +70,26 @@ typedef struct tcache_entry {
 } tcache_entry;
 ```
 
-- `tcache_get` (malloc 시): `e = entries[idx]; entries[idx] = e->next;` — 즉 bin의 head를 반환하고, head를 `e->next`로 교체함. 그러므로 **`next`를 임의 주소 X로 조작해 두면, 두 번의 malloc으로 X를 청크로 반환받음**.
-- `tcache_put` (free 시): 백포트된 2.27은 `e->key == tcache`면 bin을 순회하며 double free를 탐지함. 그래서 두 번째 free 전에 `key`를 다른 값으로 바꿔야 검사가 통과됨.
+- `tcache_get` (malloc 시): `e = entries[idx]; entries[idx] = e->next;` — 즉 bin의 head를 반환하고, head를 `e->next`로 **평문 그대로** 교체함(2.27은 Safe-Linking 없음). 그러므로 **`next`를 임의 주소 X로 조작해 두면, 두 번의 malloc으로 X를 청크로 반환받음**. 또한 2.27 `tcache_get`에는 **정렬 검사도 없음** — 이 libc에는 `malloc(): unaligned tcache chunk detected` 문자열이 아예 존재하지 않음(2.32+부터 추가). 따라서 X가 16정렬이 아니어도(예: `0x601010`) 그대로 할당됨.
+- `tcache_put` (free 시): 백포트된 2.27은 free되는 청크의 `key == tcache`면 같은 bin을 순회하며 double free를 탐지함:
+
+```c
+/* glibc 2.27 (Ubuntu 백포트) _int_free 내 tcache 경로 */
+if (tcache != NULL && tc_idx < mp_.tcache_bins) {
+  tcache_entry *e = (tcache_entry *) chunk2mem (p);
+  if (__glibc_unlikely (e->key == tcache))        // ★ double free 탐지
+    {
+      tcache_entry *tmp;
+      for (tmp = tcache->entries[tc_idx]; tmp; tmp = tmp->next)
+        if (tmp == e)
+          malloc_printerr ("free(): double free detected in tcache 2");
+    }
+  ...
+  tcache_put (p, tc_idx);
+}
+```
+
+검사가 트리거되면 `free(): double free detected in tcache 2`로 abort함(이 `libc-2.27.so`에 해당 문자열이 실제로 존재함을 `strings`로 확인 가능). 그래서 두 번째 free 전에 `key`의 값을 `tcache`와 다르게 바꿔야(`e->key != tcache`) `if`문 자체가 성립하지 않아 순회 검사를 건너뜀. poc는 `key`의 **LSB 1바이트만 `\x00`**으로 밀어 이 조건을 깨뜨림.
 
 이 문제의 double free + UAF write 조합으로 다음을 수행함:
 
@@ -200,6 +218,14 @@ og = lb + 0x4f432                               # one-gadget
 - 두 번째 `alloc`으로 A를 소진하면 bin head = `0x601010`.
 - 세 번째 `alloc`은 **`0x601010`(바이너리 `stdout` 슬롯)을 청크로 반환**받음. 이 슬롯에는 `_IO_2_1_stdout_` 주소가 들어 있는데, LSB `0x60`만 다시 써서 포인터를 손상 없이 유지함.
 - `print_chunk()`의 `%s`가 `0x601010`이 가리키는 바이트열, 즉 `_IO_2_1_stdout_`의 6바이트 libc 주소를 출력 → leak. 이후 `libc_base`/`__free_hook`/one-gadget 절대주소 계산.
+
+> **숫자 예시** — leak으로 `stdout = 0x7f1234acc760`을 받았다면:
+> ```
+> libc_base = 0x7f1234acc760 - 0x3ec760 = 0x7f1234ce0000   (항상 0x...000 페이지 정렬 → 검산 가능)
+> __free_hook = libc_base + 0x3ed8e8   = 0x7f12350cd8e8
+> one_gadget  = libc_base + 0x4f432    = 0x7f1234d2f432
+> ```
+> leak의 최하위 바이트가 `0x60`(= `_IO_2_1_stdout_` 오프셋의 LSB)이고 base가 `0x...000`으로 떨어지면 오프셋을 올바로 뺀 것.
 
 ### 2단계: `__free_hook` overwrite (tcache[0x50] 조작)
 

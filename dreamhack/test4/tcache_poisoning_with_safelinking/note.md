@@ -106,6 +106,32 @@ real_next = REVEAL_PTR(stored_next) = (pos >> 12) ^ stored_next
 
 로 복원됨. `pos`가 양쪽에서 동일(같은 청크의 같은 필드)하므로 XOR가 정확히 상쇄됨.
 
+### 정렬(alignment) 검사 — `target`이 `aligned(16)`이어야 하는 진짜 이유
+
+glibc 2.32부터 Safe-Linking과 함께 **정렬 검사**도 추가됨. `tcache_get`이 꺼낸(= `REVEAL_PTR`로 복원한) 청크 주소가 16바이트 정렬이 아니면 abort함. 이 문제의 `libc.so.6`(2.35)에 실제로 다음 문자열이 들어 있는 것으로 확인됨:
+
+```
+$ strings libc.so.6 | grep -i "unaligned tcache"
+malloc(): unaligned tcache chunk detected
+```
+
+해당 glibc 소스(2.34+ `tcache_get`):
+
+```c
+static __always_inline void *
+tcache_get_n (size_t tc_idx, tcache_entry **ep)
+{
+  tcache_entry *e = *ep;
+  if (__glibc_unlikely (!aligned_OK (e)))             // ★ 16바이트 정렬 검사
+    malloc_printerr ("malloc(): unaligned tcache chunk detected");
+  tcache->counts[tc_idx] -= 1;
+  *ep = REVEAL_PTR (e->next);                          // ★ Safe-Linking demangle
+  ...
+}
+```
+
+즉 우리가 poisoning으로 tcache에 밀어 넣는 `target` 주소도 **16바이트 정렬이어야** 이 검사를 통과함. `target`이 `__attribute__((aligned(16)))`로 선언된 것은 출제자가 공격이 성립하도록 깔아준 전제 — 만약 정렬이 안 맞는 주소(예: GOT 엔트리 중 `...8`로 끝나는 것)를 노리면 바로 `malloc(): unaligned tcache chunk detected`로 죽음. `0x404090`은 `0x...90`으로 16정렬이라 OK.
+
 ### 왜 heap leak이 필요한가
 
 `pos >> 12`는 **청크가 올라간 힙 페이지의 상위 비트**(힙 주소를 0x1000으로 나눈 값)임. ASLR 때문에 힙 base는 매 실행마다 바뀌므로, mangle 값을 미리 계산할 수 없음. 따라서:
@@ -124,6 +150,24 @@ edit_note(0, p64(e.symbols['target'] ^ (heap_addr >> 12)))
 ```
 
 이렇게 써두면 나중에 청크 0이 tcache에서 꺼내질 때 glibc가 `REVEAL_PTR` = `(heap_addr >> 12) ^ stored`를 수행 → `(heap_addr>>12) ^ (target ^ (heap_addr>>12))` = `target`이 복원되어, tcache list의 다음 청크가 `target`으로 세팅됨.
+
+### 숫자로 보는 mangle 검산
+
+예를 들어 `create_note(0)`가 leak한 `heap_addr = 0x55a1b2c03290`, `target = 0x404090`이라 하면:
+
+```
+pos          = heap_addr                = 0x000055a1b2c03290
+pos >> 12    = 0x000055a1b2c03290 >> 12 = 0x0000000055a1b2c0
+stored_next  = target ^ (pos>>12)       = 0x404090 ^ 0x55a1b2c0
+             = 0x0000000055e1f250        ← edit_note(0, p64(이 값)) 로 써넣음
+
+[나중에 malloc 시 복원]
+REVEAL_PTR   = (pos>>12) ^ stored_next
+             = 0x55a1b2c0 ^ 0x55e1f250
+             = 0x0000000000404090        = target  ✓ (정확히 복원, 16정렬)
+```
+
+poc는 `p64(e.symbols['target'] ^ (heap_addr >> 12))` 한 줄로 이 `stored_next` 계산을 수행함. `heap_addr`을 모르면 `pos>>12`를 알 수 없어 `stored_next`를 못 만들고, 설령 찍어서 넣어도 복원값이 쓰레기가 되어 `unaligned tcache chunk detected`로 죽음.
 
 ## GDB로 오프셋/주소 구하기
 
