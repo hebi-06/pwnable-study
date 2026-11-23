@@ -12,6 +12,7 @@
 
 - [기초정리.md](./기초정리.md) — 메모리 레이아웃, ELF 섹션/세그먼트, 스택, PLT/GOT, 보호기법, glibc 힙(chunk, tcache, bins, malloc/free 흐름, 버전별 차이)
 - [공략노트.md](./공략노트.md) — 패턴별 공략 치트시트
+- [examples/](./examples) — 개념별 **컴파일·익스·gdb 디버깅** 최소 예제 (BOF / 카나리 / FSB / ret2libc / 힙 tcache)
 
 ## 챌린지 목록
 

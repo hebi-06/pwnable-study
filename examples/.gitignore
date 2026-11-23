@@ -1,0 +1,4 @@
+# 컴파일 산출물 (vuln.c / *.c 에서 생성)
+vuln
+heap_demo
+*.o
