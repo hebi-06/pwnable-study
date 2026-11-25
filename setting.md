@@ -18,3 +18,7 @@ chall@1728e9fa7bde:~$ ldd ./main
 Successfully copied 2.22MB (transferred 2.22MB) to /workspaces/pwnable-study/dreamhack/test4/Libc_got_overwrite/deploy/.
 
 
+
+XKmtKrv7M9pvoAWAzSU9a7dHL0QS68pK7P7FHVx8azCI7BQS#av5F2XFAEsuCq7aMA-nVIffdF5kPAHF-kvDsvJKL-IY
+
+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
