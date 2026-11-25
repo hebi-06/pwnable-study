@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/vscode/**)",
+      "Read(//home/vscode/.claude/**)",
+      "Bash(env)"
+    ]
+  }
+}
