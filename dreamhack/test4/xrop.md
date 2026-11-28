@@ -1,5 +1,5 @@
 # 코드
-'''
+'''C 
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
   int i; // [rsp+8h] [rbp-28h]
@@ -30,7 +30,7 @@ ex # 루프 끝남
 x #루프 끝남
 
 exit 한개의 문자열이 delimiter가 아니라 e, x, i, t각각이 delimiter이기 떄문에
-'''
+'''C
 @apublicccnt-cmyk ➜ /workspaces/pwnable/xrop/deploy (main) $ checksec prob
 [*] '/workspaces/pwnable/xrop/deploy/prob'
     Arch:       amd64-64-little
@@ -68,7 +68,7 @@ CPU(CET지원 세대), 운영체제 커널(linux 6.6이상), 바이너리(컴파
 docker 를 파서 해당 문제의 libc 파일을 가져오면 됨
 가져오고 one_gadget으로 가져와서 셸을 얻으면 된다
 ## 익스코드
-''' 
+'''PYTHON 
 from pwn import *
 
 def calc_payload(input: bytes) -> bytes:
