@@ -6,8 +6,11 @@ source /workspaces/pwnable-study/.venv/bin/activate
 # docker
 
 1. Dockerfile 빌드하기 (예: docker build -t <imgname> .)
+docker build -t probimg .
 2. 빌드된 이미지로 컨테이너 실행하기 (예: docker run -d --name=<containner name> <imgname>)
+docker run --rm probimg find / -name "libc.so.6" 2>/dev/null
 3. 실행된 컨테이너 접속하기 (예: docker exec -it <containner name> bash)
+docker create --name tmpc probimg && docker cp tmpc:<경로> ./libc.so.6 && docker rm tmpc
 4. 문제 바이너리의 동적 라이브러리 확인하기 (예: ldd ./<binary>)
 chall@1728e9fa7bde:~$ ldd ./main
         linux-vdso.so.1 (0x00007ffe43708000)
