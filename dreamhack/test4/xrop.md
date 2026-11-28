@@ -1,4 +1,5 @@
-'''c
+# 코드
+'''
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
   int i; // [rsp+8h] [rbp-28h]
@@ -66,7 +67,8 @@ CPU(CET지원 세대), 운영체제 커널(linux 6.6이상), 바이너리(컴파
 
 docker 를 파서 해당 문제의 libc 파일을 가져오면 됨
 가져오고 one_gadget으로 가져와서 셸을 얻으면 된다
-'''
+## 익스코드
+''' 
 from pwn import *
 
 def calc_payload(input: bytes) -> bytes:
